@@ -304,16 +304,18 @@ button { font-family: inherit; cursor: pointer; }
 .tagline-sub-word {
   display: inline-block;
   opacity: 0;
-  transform: translateY(10px);
-  filter: blur(6px);
+  transform: translateY(22px);
+  filter: blur(10px);
   background: linear-gradient(135deg, oklch(0.92 0.008 270) 0%, oklch(0.62 0.012 270) 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  animation: wordReveal 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: wordReveal 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 @keyframes wordReveal {
-  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  0%   { opacity: 0; transform: translateY(22px); filter: blur(10px); }
+  60%  { opacity: 1; filter: blur(1px); }
+  100% { opacity: 1; transform: translateY(0);  filter: blur(0); }
 }
 .tagline-cursor {
   display: inline-block;
