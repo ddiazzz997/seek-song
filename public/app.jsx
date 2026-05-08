@@ -55,7 +55,7 @@ function detectPlatform(url) {
 // localhost → Next.js local | producción → servidor Render sin timeout
 const API_URL = window.location.hostname === 'localhost'
   ? '/api/identify'
-  : 'https://seek-song-api.onrender.com/identify';
+  : 'https://seek-song.onrender.com/identify';
 
 // Paleta de colores de álbum generada aleatoriamente para canciones reales
 const ALBUM_PALETTES = [
