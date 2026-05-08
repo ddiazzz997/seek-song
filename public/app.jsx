@@ -52,7 +52,10 @@ function detectPlatform(url) {
 }
 
 // ── API ─────────────────────────────────────────────────────────────────
-const API_URL = '/api/identify';
+// localhost → Next.js local | producción → servidor Render sin timeout
+const API_URL = window.location.hostname === 'localhost'
+  ? '/api/identify'
+  : 'https://seek-song-api.onrender.com/identify';
 
 // Paleta de colores de álbum generada aleatoriamente para canciones reales
 const ALBUM_PALETTES = [
@@ -140,36 +143,18 @@ function Header() {
 
 // ── Word-reveal subtitle ────────────────────────────────────────────────
 function TypewriterSub({ text }) {
-  const [visibleCount, setVisibleCount] = useState(0);
   const words = text.split(' ');
-
-  useEffect(() => {
-    setVisibleCount(0);
-    let i = 0;
-    const iv = setInterval(() => {
-      i++;
-      setVisibleCount(i);
-      if (i >= words.length) clearInterval(iv);
-    }, 120);
-    return () => clearInterval(iv);
-  }, [text]);
-
   return (
     <p className="tagline-sub">
-      {words.map((word, idx) =>
-        idx < visibleCount ? (
-          <span
-            key={idx}
-            className="tagline-sub-word"
-            style={{ animationDelay: `${idx * 0.06}s` }}
-          >
-            {word}{idx < words.length - 1 ? ' ' : ''}
-          </span>
-        ) : null
-      )}
-      {visibleCount < words.length && (
-        <span className="tagline-cursor" aria-hidden="true" />
-      )}
+      {words.map((word, idx) => (
+        <span
+          key={idx}
+          className="tagline-sub-word"
+          style={{ animationDelay: `${0.4 + idx * 0.18}s` }}
+        >
+          {word}{idx < words.length - 1 ? ' ' : ''}
+        </span>
+      ))}
     </p>
   );
 }
