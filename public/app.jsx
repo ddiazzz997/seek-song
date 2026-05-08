@@ -110,7 +110,7 @@ function PlatformGlyph({ id, size = 18 }) {
 }
 
 // ── Header ──────────────────────────────────────────────────────────────
-function Header() {
+function Header({ session, onLogout }) {
   return (
     <header className="header">
       <a className="logo" href="#" aria-label="Seek Song — inicio">
@@ -126,16 +126,32 @@ function Header() {
         </span>
       </a>
       <nav className="nav">
-        <a href="#precio">Precio</a>
-        <a href="#historial" className="nav-link-icon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M12 8v4l2.5 1.5M21 12a9 9 0 1 1-3-6.7M21 4v4h-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          Historial
-        </a>
-        <span className="nav-divider" aria-hidden="true" />
-        <a href="#login">Iniciar sesión</a>
-        <a href="#signup" className="nav-cta">Empezar gratis</a>
+        {session ? (
+          <>
+            <span style={{ color: 'var(--text-dim)', fontSize: '0.9rem' }}>
+              Hola, {session.nombre}
+            </span>
+            <span className="nav-divider" aria-hidden="true" />
+            <button
+              onClick={onLogout}
+              style={{ background: 'none', border: 'none', padding: 0, color: 'var(--text-dim)', cursor: 'pointer', fontSize: '0.9rem', fontFamily: 'var(--font-stack)' }}
+            >
+              Cerrar sesión
+            </button>
+          </>
+        ) : (
+          <>
+            <a href="#historial" className="nav-link-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 8v4l2.5 1.5M21 12a9 9 0 1 1-3-6.7M21 4v4h-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Historial
+            </a>
+            <span className="nav-divider" aria-hidden="true" />
+            <a href="#login">Iniciar sesión</a>
+            <a href="#signup" className="nav-cta">Empezar gratis</a>
+          </>
+        )}
       </nav>
     </header>
   );
@@ -551,8 +567,202 @@ function TweaksUI() {
   );
 }
 
+// ── Confetti (vanilla JS, sin dependencias externas) ───────────────────
+function fireConfetti() {
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:998';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const colors = [
+    '#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3',
+    '#54a0ff', '#5f27cd', '#00d2d3', '#ff9f43',
+  ];
+
+  const particles = Array.from({ length: 140 }, () => ({
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    vx: (Math.random() - 0.5) * 22,
+    vy: (Math.random() - 0.5) * 22 - 5,
+    color: colors[Math.floor(Math.random() * colors.length)],
+    w: 7 + Math.random() * 9,
+    h: 4 + Math.random() * 6,
+    alpha: 1,
+    rotation: Math.random() * 360,
+    rotSpeed: (Math.random() - 0.5) * 16,
+  }));
+
+  let frame;
+  const tick = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    for (const p of particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.42;
+      p.alpha -= 0.013;
+      p.rotation += p.rotSpeed;
+      if (p.alpha > 0) {
+        alive = true;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+    }
+    if (alive) frame = requestAnimationFrame(tick);
+    else canvas.remove();
+  };
+  frame = requestAnimationFrame(tick);
+}
+
+// ── Auth Modal ──────────────────────────────────────────────────────────
+function AuthModal({ onSuccess }) {
+  const [view, setView] = useState('register');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [form, setForm] = useState({ nombre: '', apellido: '', telefono: '', email: '', password: '' });
+
+  const setField = (key, val) => setForm(f => ({ ...f, [key]: val }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const endpoint = view === 'register' ? '/api/auth/register' : '/api/auth/login';
+    const body = view === 'register'
+      ? { nombre: form.nombre, apellido: form.apellido, telefono: form.telefono, email: form.email, password: form.password }
+      : { email: form.email, password: form.password };
+
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Algo salió mal. Intenta de nuevo.');
+        setLoading(false);
+        return;
+      }
+
+      onSuccess(data.user);
+    } catch {
+      setError('No se pudo conectar. Revisa tu conexión e intenta de nuevo.');
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="auth-backdrop">
+      <div className="auth-modal">
+        <a className="auth-modal-logo logo" href="#" aria-label="Seek Song">
+          <span className="logo-mark" aria-hidden="true" style={{width:36,height:36}}>
+            <span className="logo-ring logo-ring-1" />
+            <span className="logo-ring logo-ring-2" />
+            <span className="logo-ring logo-ring-3" />
+            <img src="assets/logo.png" alt="" style={{width:22,height:22}} />
+          </span>
+          <span className="logo-word" style={{fontSize:'1.1rem'}}>
+            <span className="logo-word-1">Seek</span>
+            <span className="logo-word-2">Song</span>
+          </span>
+        </a>
+
+        {view === 'register' ? (
+          <>
+            <h2 className="auth-modal-title">Crea tu cuenta gratis</h2>
+            <p className="auth-modal-sub">Para seguir usando la app regístrate. Es gratis y toma 30 segundos.</p>
+          </>
+        ) : (
+          <>
+            <h2 className="auth-modal-title">Bienvenido de vuelta</h2>
+            <p className="auth-modal-sub">Ingresa con tu correo y contraseña.</p>
+          </>
+        )}
+
+        {error && <div className="auth-error">{error}</div>}
+
+        <form onSubmit={handleSubmit}>
+          {view === 'register' && (
+            <>
+              <div className="auth-row">
+                <div className="auth-field">
+                  <label>Nombre</label>
+                  <input type="text" placeholder="Juan" value={form.nombre} onChange={e => setField('nombre', e.target.value)} disabled={loading} required />
+                </div>
+                <div className="auth-field">
+                  <label>Apellido</label>
+                  <input type="text" placeholder="García" value={form.apellido} onChange={e => setField('apellido', e.target.value)} disabled={loading} required />
+                </div>
+              </div>
+              <div className="auth-field">
+                <label>Teléfono</label>
+                <input type="tel" placeholder="+52 55 1234 5678" value={form.telefono} onChange={e => setField('telefono', e.target.value)} disabled={loading} required />
+              </div>
+            </>
+          )}
+
+          <div className="auth-field">
+            <label>Correo electrónico</label>
+            <input type="email" placeholder="tu@correo.com" value={form.email} onChange={e => setField('email', e.target.value)} disabled={loading} required />
+          </div>
+          <div className="auth-field">
+            <label>Contraseña{view === 'register' && ' (mínimo 8 caracteres)'}</label>
+            <input type="password" placeholder="••••••••" value={form.password} onChange={e => setField('password', e.target.value)} disabled={loading} required minLength={8} />
+          </div>
+
+          <button type="submit" className="auth-submit" disabled={loading}>
+            {loading && <span className="auth-spinner" />}
+            {loading
+              ? (view === 'register' ? 'Creando cuenta...' : 'Entrando...')
+              : (view === 'register' ? 'Crear cuenta gratis' : 'Iniciar sesión')}
+          </button>
+        </form>
+
+        <div className="auth-switch">
+          {view === 'register'
+            ? <>¿Ya tienes cuenta? <button type="button" onClick={() => { setView('login'); setError(null); }}>Inicia sesión</button></>
+            : <>¿No tienes cuenta? <button type="button" onClick={() => { setView('register'); setError(null); }}>Regístrate gratis</button></>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── App ─────────────────────────────────────────────────────────────────
 function App() {
+  const [session, setSession] = useState(window.__SEEK_SESSION__ || null);
+  const [showModal, setShowModal] = useState(false);
+
+  // Mostrar modal 10s después si no hay sesión activa
+  useEffect(() => {
+    if (session) return;
+    const timer = setTimeout(() => setShowModal(true), 10000);
+    return () => clearTimeout(timer);
+  }, [session]);
+
+  const handleAuthSuccess = (user) => {
+    setSession(user);
+    setShowModal(false);
+    fireConfetti();
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setSession(null);
+    // Volver a mostrar el modal después de 10s al cerrar sesión
+    setTimeout(() => setShowModal(true), 10000);
+  };
+
   return (
     <div className="app-shell">
       <div className="bg-fx" aria-hidden="true">
@@ -560,7 +770,7 @@ function App() {
         <div className="bg-orb bg-orb-1" />
         <div className="bg-orb bg-orb-2" />
       </div>
-      <Header />
+      <Header session={session} onLogout={handleLogout} />
       <Hero />
       <footer className="foot">
         <span>© 2026 Seek Song</span>
@@ -568,6 +778,7 @@ function App() {
         <span>Identificación musical asistida</span>
       </footer>
       <TweaksUI />
+      {showModal && <AuthModal onSuccess={handleAuthSuccess} />}
     </div>
   );
 }
