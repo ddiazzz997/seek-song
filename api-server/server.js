@@ -34,16 +34,23 @@ function buildRequest(url, platform) {
   const params = new URLSearchParams({
     link: url, hours: '00', minutes: '00', seconds: '00',
   });
-  // Instagram y Facebook necesitan recaptchaToken vacío; TikTok/YouTube NO
   if (!isTikTok && !isYouTube) params.set('recaptchaToken', '');
 
+  // Headers completos de Chrome real — necesarios desde IPs de servidor
   const headers = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'Origin':       'https://musikerkennung.com',
-    'Referer':      'https://musikerkennung.com/en/recognize-link',
+    'Content-Type':       'application/x-www-form-urlencoded',
+    'Origin':             'https://musikerkennung.com',
+    'Referer':            'https://musikerkennung.com/en/recognize-link',
+    'User-Agent':         CHROME_UA,
+    'Accept':             'application/json, text/plain, */*',
+    'Accept-Language':    'es-ES,es;q=0.9,en;q=0.8',
+    'sec-ch-ua':          '"Chromium";v="124", "Google Chrome";v="124"',
+    'sec-ch-ua-mobile':   '?0',
+    'sec-ch-ua-platform': '"macOS"',
+    'sec-fetch-dest':     'empty',
+    'sec-fetch-mode':     'cors',
+    'sec-fetch-site':     'same-origin',
   };
-  // TikTok requiere User-Agent real; Instagram/Facebook fallan con él
-  if (isTikTok) headers['User-Agent'] = CHROME_UA;
 
   return { method: 'POST', headers, body: params.toString() };
 }
