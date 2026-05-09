@@ -52,10 +52,7 @@ function detectPlatform(url) {
 }
 
 // ── API ─────────────────────────────────────────────────────────────────
-// localhost → Next.js local | producción → servidor Render sin timeout
-const API_URL = window.location.hostname === 'localhost'
-  ? '/api/identify'
-  : 'https://seek-song.onrender.com/identify';
+const API_URL = '/api/identify';
 
 // Paleta de colores de álbum generada aleatoriamente para canciones reales
 const ALBUM_PALETTES = [
@@ -157,26 +154,13 @@ function Header({ session, onLogout }) {
   );
 }
 
-// ── Word-reveal subtitle ────────────────────────────────────────────────
+// ── Animated subtitle ───────────────────────────────────────────────────
 function TypewriterSub({ text }) {
-  const words = text.split(' ');
-  return (
-    <p className="tagline-sub">
-      {words.map((word, idx) => (
-        <span
-          key={idx}
-          className="tagline-sub-word"
-          style={{ animationDelay: `${0.4 + idx * 0.18}s` }}
-        >
-          {word}{idx < words.length - 1 ? ' ' : ''}
-        </span>
-      ))}
-    </p>
-  );
+  return <p className="tagline-sub">{text}</p>;
 }
 
 // ── Hero + Input ────────────────────────────────────────────────────────
-function Hero({ tweaks }) {
+function Hero({ session, onNeedAuth }) {
   const [url, setUrl] = useState('');
   const [phase, setPhase] = useState('idle'); // idle | loading | result | error
   const [song, setSong] = useState(null);
@@ -201,6 +185,11 @@ function Hero({ tweaks }) {
   const submit = async (e) => {
     e && e.preventDefault();
     if (!url.trim() || !platform || phase === 'loading') return;
+    // Si no hay sesión → mostrar modal de registro en vez de llamar la API
+    if (!session) {
+      onNeedAuth();
+      return;
+    }
     setPhase('loading');
     setSong(null);
     try {
@@ -743,13 +732,6 @@ function App() {
   const [session, setSession] = useState(window.__SEEK_SESSION__ || null);
   const [showModal, setShowModal] = useState(false);
 
-  // Mostrar modal 10s después si no hay sesión activa
-  useEffect(() => {
-    if (session) return;
-    const timer = setTimeout(() => setShowModal(true), 10000);
-    return () => clearTimeout(timer);
-  }, [session]);
-
   const handleAuthSuccess = (user) => {
     setSession(user);
     setShowModal(false);
@@ -759,8 +741,6 @@ function App() {
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setSession(null);
-    // Volver a mostrar el modal después de 10s al cerrar sesión
-    setTimeout(() => setShowModal(true), 10000);
   };
 
   return (
@@ -771,7 +751,7 @@ function App() {
         <div className="bg-orb bg-orb-2" />
       </div>
       <Header session={session} onLogout={handleLogout} />
-      <Hero />
+      <Hero session={session} onNeedAuth={() => setShowModal(true)} />
       <footer className="foot">
         <span>© 2026 Seek Song</span>
         <span className="foot-sep" />

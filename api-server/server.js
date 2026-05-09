@@ -74,7 +74,7 @@ async function attemptIdentify(url, platform) {
 
     // Fallback si falta token recaptcha
     if (data.error === 'Missing reCAPTCHA token') {
-      const fallback = (isTikTok || isYouTube) ? 'instagram' : 'tiktok';
+      const fallback = (platform === 'tiktok' || platform === 'youtube') ? 'instagram' : 'tiktok';
       await delay(1000);
       const r2 = await fetch(MUSIK_URL, buildRequest(url, fallback));
       const d2 = await r2.json();

@@ -34,7 +34,7 @@ function buildRequest(url: string, platform: Platform): RequestInit {
     method: 'POST',
     headers,
     body: new URLSearchParams(params).toString(),
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(25000),
   }
 }
 
@@ -59,7 +59,7 @@ async function attemptIdentify(url: string, platform: Platform): Promise<TrackRe
       ? 'instagram' as Platform
       : 'tiktok' as Platform
 
-    await delay(1500)
+    await delay(500)
     const retryRes = await fetch(BASE_URL, buildRequest(url, fallbackPlatform))
     const retryData = await retryRes.json()
     if (!retryData.track) return null
@@ -79,8 +79,8 @@ export async function identifySong(
     const result = await attemptIdentify(cleanUrl, platform)
     if (result) return result
 
-    // Retry tras 2s por si fue rate limiting transitorio
-    await delay(2000)
+    // Retry tras 1s por si fue rate limiting transitorio
+    await delay(1000)
     return await attemptIdentify(cleanUrl, platform)
   } catch {
     return null

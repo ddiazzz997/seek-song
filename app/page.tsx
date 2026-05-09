@@ -12,9 +12,8 @@ export default async function Home() {
       <head suppressHydrationWarning>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Diaz Song · Identifica la música de cualquier reel</title>
+        <title>Seek Song · Identifica la música de cualquier reel</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        {/* @ts-expect-error crossOrigin es atributo HTML válido */}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap"
@@ -28,7 +27,7 @@ export default async function Home() {
         {/* Sesión inyectada desde el servidor — nunca expone el JWT al cliente */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `window.__SEEK_SESSION__ = ${JSON.stringify(sessionData)};`,
+            __html: `window.__SEEK_SESSION__ = ${JSON.stringify(sessionData).replace(/</g, '\\u003c').replace(/>/g, '\\u003e').replace(/&/g, '\\u0026')};`,
           }}
         />
 
@@ -52,10 +51,10 @@ export default async function Home() {
           crossOrigin="anonymous"
         />
 
-        {/* @ts-expect-error type="text/babel" no está en los tipos de script estándar */}
-        <script type="text/babel" src="/tweaks-panel.jsx" />
-        {/* @ts-expect-error type="text/babel" no está en los tipos de script estándar */}
-        <script type="text/babel" src="/app.jsx" />
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script {...({ type: 'text/babel', src: '/tweaks-panel.jsx' } as object)} />
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script {...({ type: 'text/babel', src: '/app.jsx' } as object)} />
       </body>
     </html>
   )
