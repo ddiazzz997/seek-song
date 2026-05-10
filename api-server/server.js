@@ -100,6 +100,11 @@ async function identifySong(url, platform) {
 app.get('/', (_req, res) => res.json({ status: 'ok', service: 'Seek Song API' }));
 
 app.post('/identify', async (req, res) => {
+  const secret = process.env.INTERNAL_SECRET;
+  if (secret && req.headers['x-internal-secret'] !== secret) {
+    return res.status(403).json({ error: 'No autorizado' });
+  }
+
   const { url } = req.body;
 
   if (!url || typeof url !== 'string') {
