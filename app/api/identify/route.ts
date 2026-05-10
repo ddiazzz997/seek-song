@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import { NextRequest, NextResponse } from 'next/server'
 import { detectPlatform, cleanUrl } from '@/lib/platforms'
 import { identifySong } from '@/lib/identify'
@@ -35,35 +37,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // En producción: proxy a Render (sus IPs no están bloqueadas por musikerkennung.com)
-    // En desarrollo: identificar directamente
-    const renderUrl = process.env.RENDER_API_URL
-    const renderSecret = process.env.RENDER_INTERNAL_SECRET
-
-    if (renderUrl && renderSecret) {
-      const renderRes = await fetch(`${renderUrl}/identify`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-secret': renderSecret,
-        },
-        body: JSON.stringify({ url }),
-        signal: AbortSignal.timeout(55000),
-      })
-
-      const data = await renderRes.json()
-
-      if (!renderRes.ok) {
-        return NextResponse.json(
-          { error: data.error || 'No se pudo identificar la canción.' },
-          { status: renderRes.status, headers: CORS_HEADERS }
-        )
-      }
-
-      return NextResponse.json(data, { headers: CORS_HEADERS })
-    }
-
-    // Fallback local (dev sin RENDER_API_URL)
     const clean = cleanUrl(url, platform)
     const track = await identifySong(clean, platform)
 
