@@ -27,16 +27,11 @@ function cleanUrl(url, platform) {
 }
 
 // ── Construcción del request a musikerkennung ────────────────────────────
-function buildRequest(url, platform) {
-  const isTikTok  = platform === 'tiktok';
-  const isYouTube = platform === 'youtube';
-
+function buildRequest(url) {
   const params = new URLSearchParams({
     link: url, hours: '00', minutes: '00', seconds: '00',
   });
-  if (!isTikTok && !isYouTube) params.set('recaptchaToken', '');
 
-  // Headers completos de Chrome real — necesarios desde IPs de servidor
   const headers = {
     'Content-Type':       'application/x-www-form-urlencoded',
     'Origin':             'https://musikerkennung.com',
@@ -64,22 +59,13 @@ async function attemptIdentify(url, platform) {
 
   try {
     const res = await fetch(MUSIK_URL, {
-      ...buildRequest(url, platform),
+      ...buildRequest(url),
       signal: controller.signal,
     });
     clearTimeout(timer);
 
     if (!res.ok) return null;
     const data = await res.json();
-
-    // Fallback si falta token recaptcha
-    if (data.error === 'Missing reCAPTCHA token') {
-      const fallback = (platform === 'tiktok' || platform === 'youtube') ? 'instagram' : 'tiktok';
-      await delay(1000);
-      const r2 = await fetch(MUSIK_URL, buildRequest(url, fallback));
-      const d2 = await r2.json();
-      return d2.track ? { title: d2.track.title, artist: d2.track.subtitle } : null;
-    }
 
     return data.track ? { title: data.track.title, artist: data.track.subtitle } : null;
   } catch {
