@@ -20,7 +20,7 @@ function buildRequest(url: string): RequestInit {
       'User-Agent': CHROME_UA,
     },
     body: params.toString(),
-    signal: AbortSignal.timeout(25000),
+    signal: AbortSignal.timeout(22000),
   }
 }
 
@@ -29,30 +29,18 @@ export interface TrackResult {
   artist: string
 }
 
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
-
-async function attemptIdentify(url: string): Promise<TrackResult | null> {
-  const res = await fetch(BASE_URL, buildRequest(url))
-  if (!res.ok) return null
-
-  const data = await res.json()
-  if (!data.track) return null
-
-  return { title: data.track.title, artist: data.track.subtitle }
-}
-
 export async function identifySong(
   cleanUrl: string,
   _platform: Platform
 ): Promise<TrackResult | null> {
   try {
-    const result = await attemptIdentify(cleanUrl)
-    if (result) return result
+    const res = await fetch(BASE_URL, buildRequest(cleanUrl))
+    if (!res.ok) return null
 
-    await delay(1000)
-    return await attemptIdentify(cleanUrl)
+    const data = await res.json()
+    if (!data.track) return null
+
+    return { title: data.track.title, artist: data.track.subtitle }
   } catch {
     return null
   }
