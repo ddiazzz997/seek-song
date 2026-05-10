@@ -53,7 +53,7 @@ function buildRequest(url) {
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
 // ── Un intento de identificación ─────────────────────────────────────────
-async function attemptIdentify(url, platform) {
+async function attemptIdentify(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 28000); // 28s max por intento
 
@@ -75,11 +75,11 @@ async function attemptIdentify(url, platform) {
 }
 
 // ── Identificación con retry ─────────────────────────────────────────────
-async function identifySong(url, platform) {
-  const first = await attemptIdentify(url, platform);
+async function identifySong(url) {
+  const first = await attemptIdentify(url);
   if (first) return first;
-  await delay(2000);
-  return await attemptIdentify(url, platform);
+  await delay(1000);
+  return await attemptIdentify(url);
 }
 
 // ── Endpoints ────────────────────────────────────────────────────────────
