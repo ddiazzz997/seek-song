@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 import { NextRequest, NextResponse } from 'next/server'
 import { detectPlatform, cleanUrl } from '@/lib/platforms'
 import { identifySong } from '@/lib/identify'
