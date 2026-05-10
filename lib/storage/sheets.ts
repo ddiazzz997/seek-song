@@ -31,6 +31,7 @@ export const sheetsAdapter: StorageAdapter = {
     })
     if (!res.ok) throw new Error('Error al guardar usuario en Google Sheets')
     const data = await res.json()
-    return { ...data, id: data.email } as UserRecord
+    // El Apps Script puede no devolver todos los campos — usar los del input como base
+    return { ...user, ...data, id: data.email ?? user.email } as UserRecord
   },
 }
