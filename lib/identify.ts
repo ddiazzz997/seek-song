@@ -11,10 +11,9 @@ function buildRequest(url: string, platform: Platform): RequestInit {
     seconds: '00',
   }
 
-  // Instagram y YouTube requieren recaptchaToken vacío — si se omite dan error
-  // Facebook falla si se incluye (aunque sea vacío) — debe omitirse
-  // TikTok no lo necesita
-  if (platform === 'instagram' || platform === 'youtube') {
+  // Instagram y Facebook requieren recaptchaToken vacío — si se omite dan "Missing reCAPTCHA token"
+  // TikTok y YouTube NO deben incluirlo — si se incluye dan "Missing reCAPTCHA token"
+  if (platform === 'instagram' || platform === 'facebook') {
     params.recaptchaToken = ''
   }
 
@@ -22,18 +21,15 @@ function buildRequest(url: string, platform: Platform): RequestInit {
     'Content-Type': 'application/x-www-form-urlencoded',
     'Origin': 'https://musikerkennung.com',
     'Referer': 'https://musikerkennung.com/en/recognize-link',
-  }
-
-  // Solo TikTok requiere User-Agent; las otras plataformas no lo necesitan
-  if (platform === 'tiktok') {
-    headers['User-Agent'] = CHROME_UA
+    'User-Agent': CHROME_UA,
+    'Accept': 'application/json, text/plain, */*',
   }
 
   return {
     method: 'POST',
     headers,
     body: new URLSearchParams(params).toString(),
-    signal: AbortSignal.timeout(22000),
+    signal: AbortSignal.timeout(30000),
   }
 }
 
